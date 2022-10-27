@@ -1,0 +1,73 @@
+﻿@page "/"
+
+@using upd8.CustomerRegistration.Domain.Entities
+@inject IJSRuntime JSRuntime;
+@inject upd8.CustomerRegistration.Infrastructure.Services.ICustomerService CustomerService;
+
+<PageTitle>Clientes</PageTitle>
+
+<h1>Clientes</h1>
+
+<a href="/create" class="btn btn-success">Criar</a>
+
+<table class="table table-responsive table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Data Nascimento</th>
+            <th>Sexo</th>
+            <th>Endereço</th>
+            <th>Estado</th>
+            <th>Cidade</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (customers != null && customers.Count > 0)
+        {
+            foreach (var item in customers)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Name</td>
+                    <td>@item.CPF</td>
+                    <td>@item.BirthDate</td>
+                    <td>@item.Sex</td>
+                    <td>@item.Address</td>
+                    <td>@item.State</td>
+                    <td>@item.City</td>
+                    <td>
+                        <a href="/update/@item.Id" class="btn btn-warning">Atualizar</a>
+                        <button class="btn btn-danger" @onclick="async () => await DeleteCustomer(item.Id)">Deletar</button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    List<Customer> customers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = await CustomerService.GetAll();
+    }
+
+    async Task DeleteCustomer(Guid id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja deletar?");
+        if (confirmed is false)
+            return;
+
+        var customer = await CustomerService.GetBy(id);
+
+        await CustomerService.Delete(customer);
+
+        customers = await CustomerService.GetAll();
+
+        StateHasChanged();
+    }
+}
